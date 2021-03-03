@@ -12,14 +12,15 @@ async def start_services():
     state_machine = state.RPB_State_Machine()
 
     logging.info('Startup websocket server')
-    await ws_server.start_server(state_machine)
+    ws_server_task = ws_server.start_server(state_machine)
     logging.info('Startup websocket server [ok]')
 
     logging.info('Startup ps monitor')
     ps_monitor_task = asyncio.create_task(ps_monitor.start_ps_monitor(state_machine))
     logging.info('Startup ps monitor [ok]')
 
-    await asyncio.sleep(100)
+    await asyncio.gather(ws_server_task, ps_monitor_task)
+
     logging.info('Exit')
 
 if __name__ == "__main__":

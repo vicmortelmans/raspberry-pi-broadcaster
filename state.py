@@ -64,8 +64,12 @@ class IdleState(State):
 
     def on_event(self, sm, event):
         if event == 'start' or event == 'button-short':
-            asyncio.create_task()
-            return StartingState()
+            new_state = StartingState()
+            logging.info("New state is " + str(new_state))
+            logging.info("Scheduling task for sending new state to clients")
+            asyncio.create_task(ws_server.send_message(str(new_state)))
+            
+            return new_state
         elif event == 'reboot' or event == 'button-long':
             return RebootingState()
 

@@ -9,13 +9,15 @@ logger.addHandler(logging.StreamHandler())
 connected = set()
 
 async def client_handler(websocket, path):
+    global state_machine
+
     logger.info("New client connected")
     # Register.
     connected.add(websocket)
     try:
         async for message in websocket:
-            logger.info("Receiving message: " + message)
-            await websocket.send(message + ' received')
+            logger.info("Receiving message: " + message.strip())
+            state_machine.on_event(message.strip())
     finally:
         # Unregister.
         connected.remove(websocket)
