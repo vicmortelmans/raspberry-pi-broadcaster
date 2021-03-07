@@ -12,14 +12,14 @@ async def client_handler(websocket, path):
     global state_machine
 
     logger.info("New client connected")
-    # Register.
+    # Register
     connected.add(websocket)
     try:
         async for message in websocket:
             logger.info("Receiving message: " + message.strip())
-            state_machine.on_event(message.strip())
+            state_machine.on_event(json.loads(message.strip()))
     finally:
-        # Unregister.
+        # Unregister
         connected.remove(websocket)
         logger.info("Client has disconnected")
 
