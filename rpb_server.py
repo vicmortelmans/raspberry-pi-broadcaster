@@ -5,7 +5,12 @@ import state
 import ws_server
 import ps_monitor
 
+state_machine = None
+
+
 async def start_services():
+    global state_machine
+
     logging.info('Entry')
     
     logging.info('Startup state machine')
@@ -24,6 +29,8 @@ async def start_services():
     logging.info('Exit')
 
 if __name__ == "__main__":
+    # start the service by runing "./rpb_server.py"  
+
     logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d %(funcName)s] %(message)s',
         datefmt='%Y-%m-%d:%H:%M:%S',
         level=logging.DEBUG)

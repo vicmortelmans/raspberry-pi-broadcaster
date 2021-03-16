@@ -1,7 +1,7 @@
 import logging
 import asyncio
 import ws_server
-import create_broadcast
+import start_broadcasts
 
 # https://dev.to/karn/building-a-simple-state-machine-in-python
 
@@ -25,17 +25,17 @@ class RPB_State_Machine(object):
 
         Events are dicts with at least a name property and optionally additional info
         """
-	try:
-	    if not 'name' in event:
-		raise KeyError("no 'name' in event")
+        try:
+            if not 'name' in event:
+                raise KeyError("no 'name' in event")
 
-	    logging.info(f"'{event['name']}' in old state: '{self.state}'")
+            logging.info(f"State machine in state '{self.state}' receiving event '{event['name']}'")
 
-	    # The next state will be the result of the on_event function.
-	    self.state = self.state.on_event(event)
-	    logging.info(f"new state: '{self.state}'")
-	except KeyError as e:
-	    logging.error(f"missing data in event: '{event}' ({e})")
+            # The next state will be the result of the on_event function.
+            self.state = self.state.on_event(event)
+            logging.info(f"State machine has a new state: '{self.state}'")
+        except KeyError as e:
+            logging.error(f"Missing data in event: '{event}' ({e})")
 
 
 class State(object):
@@ -73,25 +73,24 @@ class IdleState(State):
 
     def on_event(self, event):
         if event['name'] == 'start' or event['name'] == 'button-short':
-	    if not 'data' in event:
-		raise KeyError("no 'data' in event")
-	    if not 'name' in event['data']:
-		raise KeyError("no 'name' in event['data']")
-	    default_data = {
-		'title': '',
-		'description': ''
-	    }
-	    data = default_data.update(event['data'])
+            if not 'data' in event:
+                raise KeyError("no 'data' in event")
+            data = {
+                    'title': '',
+                    'description': ''
+                    }
+            data.update(event['data'])
             new_state = StartingState()
             logging.info("New state is " + str(new_state))
             logging.info("Scheduling task for sending new state to clients")
             asyncio.create_task(ws_server.send_message(str(new_state)))
-            logging.info("Scheduling task for starting the livestream")
-            asyncio.create_task(create_broadcast.async_create_broadcast(data['name'], data['title'], data['description']))
+            logging.info(f"Scheduling task for starting the livestream with data: '{str(data)}'")
+            asyncio.create_task(start_broadcasts.async_start(data['title'], data['description']))
             return new_state
         elif event == 'reboot' or event == 'button-long':
             return RebootingState()
 
+        logging.error(f"Unexpected event, state is not changed")
         return self
 
 
@@ -108,6 +107,7 @@ class StartingState(State):
         elif event == 'reboot' or event == 'button-long':
             return RebootingState()
 
+        logging.error(f"Unexpected event, state is not changed")
         return self
 
 
@@ -124,6 +124,7 @@ class StreamingState(State):
         elif event == 'reboot' or event == 'button-long':
             return RebootingState()
 
+        logging.error(f"Unexpected event, state is not changed")
         return self
 
 
@@ -138,8 +139,9 @@ class StoppingState(State):
         elif event == 'reboot' or event == 'button-long':
             return RebootingState()
 
+        logging.error(f"Unexpected event, state is not changed")
         return self
-    
+
 
 class RebootingState(State):
     """
@@ -150,6 +152,7 @@ class RebootingState(State):
         if event == 'reboot' or event == 'button-long':
             return RebootingState()
 
+        logging.error(f"Unexpected event, state is not changed")
         return self
 
 

@@ -13,7 +13,6 @@ import google.oauth2.credentials
 import requests
 import configuration
 from slugify import slugify
-from async_wrap import async_wrap
 
 # The CLIENT_SECRETS_FILE variable specifies the name of a file that contains
 # the OAuth 2.0 information for this application, including its client_id and
@@ -87,7 +86,7 @@ def insert_broadcast(youtube, title, description, start_time, end_time):
 
   snippet = insert_broadcast_response["snippet"]
 
-  logging.info("create_broadcast.py: Broadcast '%s' with title '%s' was published at '%s'." % (
+  logging.info("Broadcast '%s' with title '%s' was published at '%s'." % (
     insert_broadcast_response["id"], snippet["title"], snippet["publishedAt"]))
   return {
     "id" : insert_broadcast_response["id"]
@@ -115,7 +114,7 @@ def insert_stream(youtube, title):
   snippet = insert_stream_response["snippet"]
   rtmp = insert_stream_response["cdn"]["ingestionInfo"]
 
-  logging.info("create_broadcast.py: Stream '%s' with title '%s' was inserted." % (
+  logging.info("Stream '%s' with title '%s' was inserted." % (
     insert_stream_response["id"], snippet["title"]))
   return {
     "id" : insert_stream_response["id"],
@@ -132,7 +131,7 @@ def bind_broadcast(youtube, broadcast_id, stream_id):
     streamId=stream_id
   ).execute()
 
-  logging.info("create_broadcast.py: Broadcast '%s' was bound to stream '%s'." % (
+  logging.info("Broadcast '%s' was bound to stream '%s'." % (
     bind_broadcast_response["id"],
     bind_broadcast_response["contentDetails"]["boundStreamId"]))
   
@@ -154,22 +153,18 @@ def create_broadcast(name, title, description):
     broadcast = insert_broadcast(youtube, title, description, t, t2)
     stream = insert_stream(youtube, title)
     bind_broadcast(youtube, broadcast["id"], stream["id"])
+    logging.info("Success creating youtube broadcast")
     return {
         "id" : broadcast["id"],
         "rtmp" : stream["rtmp"]
     }
   except googleapiclient.errors.HttpError as e:
-    logging.error("create_broadcast.py: An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
+    logging.error("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
     return {}
 
 
-@async_wrap
-def async_create_broadcast(name, title, description):
-    return create_broadcast(name, title, description)
-
-
 if __name__ == "__main__":
-    # very crude standalone interpretation, expecting as first argument the
+    # very crude standalone implementation, expecting as first argument the
     # name as in the section header in the config.ini file, for testing only
     # example: python3 create_broadcast.py "<name as in config.ini header>"
     return_dict = create_broadcast(sys.argv[1], '', '')
