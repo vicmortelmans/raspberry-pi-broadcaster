@@ -5,6 +5,7 @@ from async_wrap import async_wrap
 import configuration
 import logging
 from rpb_server import state_machine
+import traceback
 
 
 @async_wrap
@@ -18,10 +19,18 @@ def async_start(title, description):
     for ini in inis:
         if configuration.data[ini]['type'] == 'youtube':
             logging.info(f"Negotiating with youtube for '{ini}'")
-            rtmps.append(create_youtube_broadcast.create_broadcast(ini, title, description).update({'ini':ini}))
+            try:
+                rtmps.append(create_youtube_broadcast.create_broadcast(ini, title, description).update({'ini':ini}))
+            except Exception as e:
+                logging.error(f"Youtube negotiations failes for '{ini}', see traceback:")
+                logging.error(traceback.format_exc())
         elif configuration.data[ini]['type'] == 'facebook':
             logging.info(f"Negotiating with facebook for '{ini}'")
-            rtmps.append(create_facebook_broadcast.create_broadcast(ini, title, description).update({'ini':ini}))
+            try:
+                rtmps.append(create_facebook_broadcast.create_broadcast(ini, title, description).update({'ini':ini}))
+            except Exception as e:
+                logging.error(f"Facebook negotiations failes for '{ini}', see traceback:")
+                logging.error(traceback.format_exc())
     command = f"{ffmpeg} -f flv -listen 1 -i rtmp://127.0.0.1:1936/webcam/"
     for rtmp in rtmps:
         if 'rtmp' in rtmp:

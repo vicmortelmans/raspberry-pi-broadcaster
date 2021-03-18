@@ -32,6 +32,7 @@ class RPB_State_Machine(object):
             logging.info(f"State machine in state '{self.state}' receiving event '{event['name']}'")
 
             # The next state will be the result of the on_event function.
+            # If the on_event() method raises an exception, the state is NOT changed !!
             self.state = self.state.on_event(event)
             logging.info(f"State machine has a new state: '{self.state}'")
         except KeyError as e:
