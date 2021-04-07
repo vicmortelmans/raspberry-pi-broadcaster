@@ -1,7 +1,9 @@
 import asyncio
 from aiohttp import web
+import aiohttp
 import json
 import logging
+import state
 
 logger = logging.getLogger('websockets')
 logger.setLevel(logging.INFO)
@@ -10,8 +12,6 @@ logger.addHandler(logging.StreamHandler())
 connected = set()
 
 async def client_handler(request):
-    global state_machine
-
     logger.info("New client connected")
 
     ws = web.WebSocketResponse()
@@ -23,9 +23,9 @@ async def client_handler(request):
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             try:
-                logger.info("Receiving message: " + msg.strip())
+                logger.info("Receiving message: " + msg.data.strip())
                 # convert json string to dict and pass along to state machine
-                state_machine.on_event(json.loads(msg.strip()))
+                state.Machine().on_event(json.loads(msg.data.strip()))
             except KeyError as e:
                 logger.error("Message parsing error: ", exc_info=e)
                 # Ignoring message
@@ -43,11 +43,8 @@ async def client_handler(request):
     return ws
 
 
-async def start_server(sm):
+async def start_server_async():
     """Start the server."""
-    global state_machine
-    state_machine = sm
-
     logger.info("Starting server as a task")
     app = web.Application()
     app.add_routes([web.get('/', client_handler)])
@@ -63,5 +60,5 @@ async def send_message(message):
 
     logger.info(f"Going to send message '{message}' to all connected clients")
 
-    for websocket in connected:
-        await websocket.send(message)
+    for ws in connected:
+        await ws.send_str(message)

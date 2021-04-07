@@ -5,23 +5,20 @@ import state
 import ws_server
 import ps_monitor
 
-state_machine = None
-
 
 async def start_services():
-    global state_machine
-
     logging.info('Entry')
     
     logging.info('Startup state machine')
-    state_machine = state.RPB_State_Machine()
+    state.Machine()
 
     logging.info('Startup websocket server')
-    ws_server_task = ws_server.start_server(state_machine)
+    ws_server_task = ws_server.start_server_async()
     logging.info('Startup websocket server [ok]')
 
     logging.info('Startup ps monitor')
-    ps_monitor_task = asyncio.create_task(ps_monitor.start_ps_monitor(state_machine))
+    ps_monitor_task = ps_monitor.start_ps_monitor_async()
+    # ps_monitor_task = asyncio.create_task(ps_monitor.start_ps_monitor())
     logging.info('Startup ps monitor [ok]')
 
     await asyncio.gather(ws_server_task, ps_monitor_task)

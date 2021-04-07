@@ -4,7 +4,7 @@ import create_facebook_broadcast
 from async_wrap import async_wrap
 import configuration
 import logging
-from rpb_server import state_machine
+import state
 import traceback
 
 
@@ -20,23 +20,32 @@ def async_start(title, description):
         if configuration.data[ini]['type'] == 'youtube':
             logging.info(f"Negotiating with youtube for '{ini}'")
             try:
-                rtmps.append(create_youtube_broadcast.create_broadcast(ini, title, description).update({'ini':ini}))
+                rtmp = create_youtube_broadcast.create_broadcast(ini, title, description)
+                rtmp.update({'ini':ini})
+                rtmps.append(rtmp)
             except Exception as e:
                 logging.error(f"Youtube negotiations failes for '{ini}', see traceback:")
                 logging.error(traceback.format_exc())
         elif configuration.data[ini]['type'] == 'facebook':
             logging.info(f"Negotiating with facebook for '{ini}'")
             try:
-                rtmps.append(create_facebook_broadcast.create_broadcast(ini, title, description).update({'ini':ini}))
+                rtmp = create_facebook_broadcast.create_broadcast(ini, title, description)
+                rtmp.update({'ini':ini})
+                rtmps.append(rtmp)
             except Exception as e:
                 logging.error(f"Facebook negotiations failes for '{ini}', see traceback:")
                 logging.error(traceback.format_exc())
+    logging.info(f"Result of negotiations is {len(rtmps)} targets:")
+    logging.info(str(rtmps))
+    try:
+        ffmpeg = configuration.data['DEFAULT']['ffmpeg_path']
+    except KeyError as e:
+        logging.error("Configuration file is missing 'ffmpeg_path' in [DEFAULT] section.")
     command = f"{ffmpeg} -f flv -listen 1 -i rtmp://127.0.0.1:1936/webcam/"
     for rtmp in rtmps:
         if 'rtmp' in rtmp:
-            ffmpeg = configuration[rtmp['ini'], 'ffmpeg_path']
-            command += f"{ffmpeg} -c copy -f flv '{stream['rtmp']}'"
+            command += f" -c copy -f flv '{rtmp['rtmp']}'"
     logging.info(f"Launching stream: {command}")
     # os.system("daemon --stdout=daemon.info --stderr=daemon.err -- %s" % command)
-    state_machine.on_event({'name': 'started'})
+    state.Machine().on_event({'name': 'started'})
 

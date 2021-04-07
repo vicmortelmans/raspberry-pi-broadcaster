@@ -50,8 +50,8 @@ def create_broadcast(ini, title, description):
     path = "/me/live_videos"
     params = {
         "status": "LIVE_NOW",
-        "title": broadcast_title,
-        "description": broadcast_description,
+        "title": title,
+        "description": description,
         "access_token": long_lived_page_access_token}
 
     url = "{host}{version}{path}".format(host=host, version=version, path=path)
@@ -60,7 +60,7 @@ def create_broadcast(ini, title, description):
 
     # open the URL and read the response
     try:
-        resp = requests.post(url, params=params).text
+        resp = json.loads(requests.post(url, params=params).text)
     except urllib.error.HTTPError as e:
         logging.error("Request failed because of " + e.reason)
         return {}

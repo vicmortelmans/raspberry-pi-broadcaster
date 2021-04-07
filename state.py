@@ -1,21 +1,29 @@
+import configuration
 import logging
 import asyncio
 import ws_server
 import start_broadcasts
 
-# https://dev.to/karn/building-a-simple-state-machine-in-python
 
-
-class RPB_State_Machine(object):
+class Machine(object):
     """ 
     Raspberry Pi Broadcaster State Machine
     """
+
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Machine, cls).__new__(cls)
+        return cls.instance
 
     def __init__(self):
         """ Initialize the components. """
 
         # Start with a default state.
         self.state = IdleState()
+
+    def has_state(self, state_class):
+        """ Test current state """
+        return isinstance(self.state, state_class)
 
     def on_event(self, event):
         """
@@ -24,6 +32,8 @@ class RPB_State_Machine(object):
         then assigned as the new state.
 
         Events are dicts with at least a name property and optionally additional info
+
+        {"name": "...", "data": {...}}
         """
         try:
             if not 'name' in event:
@@ -70,6 +80,13 @@ class State(object):
 class IdleState(State):
     """
     The state which indicates that there is no streaming.
+
+    Examples of events that are accepted:
+
+    {"name":"start","data":{"title":"Custom Title","description":"Custom Description"}}
+    {"name":"button-short"}
+    {"name":"reboot"}
+    {"name":"button-long"}
     """
 
     def on_event(self, event):
@@ -80,7 +97,7 @@ class IdleState(State):
                     'title': '',
                     'description': ''
                     }
-            data.update(event['data'])
+            data.update(event['data'])  # fallback values
             new_state = StartingState()
             logging.info("New state is " + str(new_state))
             logging.info("Scheduling task for sending new state to clients")
@@ -156,4 +173,6 @@ class RebootingState(State):
         logging.error(f"Unexpected event, state is not changed")
         return self
 
+
+# https://dev.to/karn/building-a-simple-state-machine-in-python
 
