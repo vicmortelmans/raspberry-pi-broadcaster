@@ -12,14 +12,11 @@ class Machine(object):
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
+            logging.info("Creating new instance of state machine")
             cls.instance = super(Machine, cls).__new__(cls)
+            logging.info("Initializing the state machine with IdleState")
+            cls.instance.state = IdleState()
         return cls.instance
-
-    def __init__(self):
-        """ Initialize the components. """
-
-        # Start with a default state.
-        self.state = IdleState()
 
     def has_state(self, state_class):
         """ Test current state """
@@ -41,12 +38,28 @@ class Machine(object):
 
             logging.info(f"State machine in state '{self.state}' receiving event '{event['name']}'")
 
-            # The next state will be the result of the on_event function.
-            # If the on_event() method raises an exception, the state is NOT changed !!
-            self.state = self.state.on_event(event)
+            # The next state will be the result of the handle function.
+            # If the handle() method raises an exception, the state is NOT changed !!
+            self.state = self.state.handle(event)
+            logging.info("Scheduling task for sending new state to clients")
+            asyncio.create_task(ws_server.send_message(str(self.state)))
             logging.info(f"State machine has a new state: '{self.state}'")
         except KeyError as e:
             logging.error(f"Missing data in event: '{event}' ({e})")
+
+    async def await_event(self, task):
+        """
+        Await the result of the task, which is an event dict. Use this in the event handler when it
+        has tasks that don't return instantanuously:
+
+        task = asyncio.create_task(async_function_that_takes_long_and_returns_event_dict())
+        asyncio.create_task(Machine().await_event(task))
+
+        """
+        logging.info("Awaiting event...")
+        event = await task
+        logging.info(f"Awaited event '{str(event)}'")
+        self.on_event(event)
 
 
 class State(object):
@@ -58,7 +71,7 @@ class State(object):
     def __init__(self):
         logging.info(f"Processing current state '{str(self)}'")
 
-    def on_event(self, event):
+    def handle(self, event):
         """
         Handle events that are delegated to this State.
         """
@@ -89,7 +102,7 @@ class IdleState(State):
     {"name":"button-long"}
     """
 
-    def on_event(self, event):
+    def handle(self, event):
         if event['name'] == 'start' or event['name'] == 'button-short':
             if not 'data' in event:
                 raise KeyError("no 'data' in event")
@@ -100,12 +113,11 @@ class IdleState(State):
             data.update(event['data'])  # fallback values
             new_state = StartingState()
             logging.info("New state is " + str(new_state))
-            logging.info("Scheduling task for sending new state to clients")
-            asyncio.create_task(ws_server.send_message(str(new_state)))
             logging.info(f"Scheduling task for starting the livestream with data: '{str(data)}'")
-            asyncio.create_task(start_broadcasts.async_start(data['title'], data['description']))
+            task = asyncio.create_task(start_broadcasts.async_start(data['title'], data['description']))
+            asyncio.create_task(Machine().await_event(task))
             return new_state
-        elif event == 'reboot' or event == 'button-long':
+        elif event['name'] == 'reboot' or event['name'] == 'button-long':
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -117,12 +129,12 @@ class StartingState(State):
     The state which indicates that streaming is attempted to be started.
     """
 
-    def on_event(self, event):
-        if event == 'started':
+    def handle(self, event):
+        if event['name'] == 'started':
             return StreamingState()
-        elif event == 'failed':
+        elif event['name'] == 'failed':
             return IdleState()
-        elif event == 'reboot' or event == 'button-long':
+        elif event['name'] == 'reboot' or event['name'] == 'button-long':
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -134,12 +146,17 @@ class StreamingState(State):
     The state which indicates that streaming is ongoing.
     """
 
-    def on_event(self, event):
-        if event == 'stop':
-            return StoppingState()
-        elif event == 'streaming-died':
+    def handle(self, event):
+        if event['name'] == 'stop':
+            new_state = StoppingState()
+            logging.info("New state is " + str(new_state))
+            logging.info(f"Scheduling task for stopping the livestream")
+            task = asyncio.create_task(start_broadcasts.async_stop())
+            asyncio.create_task(Machine().await_event(task))
+            return new_state
+        elif event['name'] == 'streaming-died':
             return IdleState()
-        elif event == 'reboot' or event == 'button-long':
+        elif event['name'] == 'reboot' or event['name'] == 'button-long':
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -151,10 +168,10 @@ class StoppingState(State):
     The state which indicates that streaming is being ended.
     """
 
-    def on_event(self, event):
-        if event == 'stopped':
+    def handle(self, event):
+        if event['name'] == 'stopped':
             return IdleState()
-        elif event == 'reboot' or event == 'button-long':
+        elif event['name'] == 'reboot' or event['name'] == 'button-long':
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -166,8 +183,8 @@ class RebootingState(State):
     The state which indicates that the RPB is being rebooted.
     """
 
-    def on_event(self, event):
-        if event == 'reboot' or event == 'button-long':
+    def handle(self, event):
+        if event['name'] == 'reboot' or event['name'] == 'button-long':
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")

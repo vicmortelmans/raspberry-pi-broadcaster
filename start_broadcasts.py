@@ -4,7 +4,9 @@ import create_facebook_broadcast
 from async_wrap import async_wrap
 import configuration
 import logging
+import ps_monitor
 import state
+import subprocess
 import traceback
 
 
@@ -47,5 +49,12 @@ def async_start(title, description):
             command += f" -c copy -f flv '{rtmp['rtmp']}'"
     logging.info(f"Launching stream: {command}")
     # os.system("daemon --stdout=daemon.info --stderr=daemon.err -- %s" % command)
-    state.Machine().on_event({'name': 'started'})
+    # return the new state
+    return {'name': 'started'}
 
+@async_wrap
+def async_stop():
+    pid = ps_monitor.pid
+    subprocess.getoutput('kill ' + pid)    
+    logging.info(f"Killed process {str(pid)}")
+    return {'name': 'stopped'}
