@@ -1,24 +1,28 @@
 import asyncio
 from aiohttp import web
 import aiohttp
+import aiohttp_jinja2
+import jinja2
 import json
 import logging
+import os
+import socket
 import state
 
 logger = logging.getLogger('websockets')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-connected = set()
+connected_websockets = set()
 
-async def client_handler(request):
+async def socket_handler(request):
     logger.info("New client connected")
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
     # Register
-    connected.add(ws)
+    connected_websockets.add(ws)
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
@@ -38,16 +42,27 @@ async def client_handler(request):
 
     # Unregister
     logger.info("Client has disconnected")
-    connected.remove(ws)
+    connected_websockets.remove(ws)
 
     return ws
 
+async def site_handler(request):
+    context = {
+        'ip': get_ip()
+    }
+    response = aiohttp_jinja2.render_template("rpb_console.html", request, context=context)
+    return response
 
 async def start_server_async():
     """Start the server."""
     logger.info("Starting server as a task")
     app = web.Application()
-    app.add_routes([web.get('/', client_handler)])
+    aiohttp_jinja2.setup(
+        app, loader=jinja2.FileSystemLoader(os.getcwd())
+    )
+    app.add_routes([web.get('/socket.io', socket_handler)])
+    app.add_routes([web.get('/site', site_handler)])
+    app.router.add_static('/site/js/', path='js', name='js')
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, 'localhost', 8080)
@@ -56,9 +71,17 @@ async def start_server_async():
 
 
 async def send_message(message):
-    global connected
+    global connected_websockets
 
     logger.info(f"Going to send message '{message}' to all connected clients")
 
-    for ws in connected:
+    for ws in connected_websockets:
         await ws.send_str(message)
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip = s.getsockname()[0]
+    logger.info(f"My IP address is '{ip}'")
+    s.close()
+    return ip
