@@ -61,7 +61,7 @@ async def start_server_async():
         app, loader=jinja2.FileSystemLoader(os.getcwd())
     )
     app.add_routes([web.get('/socket.io', socket_handler)])
-    app.add_routes([web.get('/site', site_handler)])
+    app.add_routes([web.get('/site/', site_handler)])
     app.router.add_static('/site/js/', path='js', name='js')
     runner = web.AppRunner(app)
     await runner.setup()

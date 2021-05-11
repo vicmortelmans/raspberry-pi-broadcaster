@@ -28,14 +28,14 @@
     <div id="streams">
       <h2>Streams</h2>
     </div>
-    <div id="stop-button">
+    <div id="stop-button" class="dynamic StreamingState">
       <form action="/cgi-bin/stream_auto.cgi" method="post">
         <input type="hidden" name="action" value="stop">
         <p>Wachtwoord:<br/><input type="password" name="password"></p>
         <input type="submit" value="Stop streaming">
       </form>
     </div>
-    <div id="start-button">
+    <div id="start-button" class="dynamic IdleState">
       <form>
         <p>Titel:<br/><input type="text" name="title" value="TODO: pre-filled" size=40></p>
         <!--p>Titel:<br/><input type="text" name="title" value="{{ liturgical_day|e }}" size=40></p-->
@@ -51,7 +51,7 @@
         <source src="/webcam/hhart.m3u8" type="application/x-mpegURL"/>
       </video>
     </div>
-    <div id="stop-button">
+    <div id="reboot-button">
       <form action="/cgi-bin/stream_auto.cgi" method="post">
         <input type="hidden" name="action" value="stop">
         <p>Wachtwoord:<br/><input type="password" name="password"></p>
