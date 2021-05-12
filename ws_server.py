@@ -29,7 +29,9 @@ async def socket_handler(request):
             try:
                 logger.info("Receiving message: " + msg.data.strip())
                 # convert json string to dict and pass along to state machine
-                state.Machine().on_event(json.loads(msg.data.strip()))
+                answer = state.Machine().on_event(json.loads(msg.data.strip()))
+                if answer:
+                    await ws.send_str(answer)
             except KeyError as e:
                 logger.error("Message parsing error: ", exc_info=e)
                 # Ignoring message

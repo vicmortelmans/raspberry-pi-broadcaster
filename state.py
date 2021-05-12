@@ -37,7 +37,6 @@ class Machine(object):
                 raise KeyError("no 'name' in event")
 
             logging.info(f"State machine in state '{self.state}' receiving event '{event['name']}'")
-
             # The next state will be the result of the handle function.
             # If the handle() method raises an exception, the state is NOT changed !!
             self.state = self.state.handle(event)
@@ -46,6 +45,10 @@ class Machine(object):
             logging.info(f"State machine has a new state: '{self.state}'")
         except KeyError as e:
             logging.error(f"Missing data in event: '{event}' ({e})")
+        except configuration.PasswordError as e:
+            logging.error(f"Wrong password in event: '{event}'")
+            return "Wrong password!"
+
 
     async def await_event(self, task):
         """
@@ -108,9 +111,11 @@ class IdleState(State):
                 raise KeyError("no 'data' in event")
             data = {
                     'title': '',
-                    'description': ''
+                    'description': '',
+                    'password': ''
                     }
             data.update(event['data'])  # fallback values
+            configuration.check_password(data['password'])  # throw error if password is wrong
             new_state = StartingState()
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for starting the livestream with data: '{str(data)}'")

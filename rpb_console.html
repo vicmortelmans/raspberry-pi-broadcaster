@@ -6,13 +6,19 @@
     <!--link rel="stylesheet" href="/style.css" type="text/css" media="screen"-->
     <style>
       body {
-        text-align: center;
+          text-align: center;
       }
       div.video {
-        padding: 12px;
+          padding: 12px;
       }
       .video-js {
-        margin: auto;
+          margin: auto;
+      }
+      .dynamic {
+          display: none;
+      }
+      .dynamic.IdleState {
+          display: block;
       }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,12 +29,13 @@
     <h1>Heilig Hart Livestream</h1>
     <div id="status-error">
       <h2>Statusrapport</h2>
-      <pre>{{ state|e }}</pre>
+      <pre></pre>
     </div>
     <div id="streams">
       <h2>Streams</h2>
     </div>
     <div id="stop-button" class="dynamic StreamingState">
+      <h2 style="color: red'">IN UITZENDING !</h2>
       <form action="/cgi-bin/stream_auto.cgi" method="post">
         <input type="hidden" name="action" value="stop">
         <p>Wachtwoord:<br/><input type="password" name="password"></p>
@@ -36,6 +43,7 @@
       </form>
     </div>
     <div id="start-button" class="dynamic IdleState">
+      <h2>Geen uitzending</h2>
       <form>
         <p>Titel:<br/><input type="text" name="title" value="TODO: pre-filled" size=40></p>
         <!--p>Titel:<br/><input type="text" name="title" value="{{ liturgical_day|e }}" size=40></p-->

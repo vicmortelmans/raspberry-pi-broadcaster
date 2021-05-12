@@ -5,18 +5,15 @@ const socket = new WebSocket('wss:/' + window.location.host + '/socket.io/');
 socket.addEventListener('message', function (event) {
     const state = event.data;
     console.log('Message from server ', state);
-    // hide/show dynamic elements
-    const dynamicItems = document.querySelectorAll('div[class~="dynamic"]');
-    dynamicItems.forEach(item => {
-        console.log(`state ${state} item classes ${item.className}`);
-        if (item.classList.contains(state)) {
-            console.log("showing");
-            item.style.display = "block";
-        } else {
-            console.log("hiding");
-            item.style.display = "none";
-        }
-    });
+    if (["IdleState","StartingState","StreamingState","StoppingState","RebootingState"].includes(state)) {
+        // hide/show dynamic elements
+        hideShowDynamicItems(state);
+        // remove previous message
+        document.querySelector("pre").textContent = "";
+    } else {
+        // just display it as a message
+        document.querySelector("pre").textContent = state;
+    }
 });
 
 const start_form = document.querySelector('#start-button form');
@@ -27,8 +24,34 @@ start_form.addEventListener('submit', event => {
 		"name": "start",
 		"data": {
 			"title": data.get("title"),
-			"description": data.get("description")
+			"description": data.get("description"),
+            "password": data.get("password")
 		}
 	};
 	socket.send(JSON.stringify(message));
 });
+
+const stop_form = document.querySelector('#stop-button form');
+stop_form.addEventListener('submit', event => {
+	event.preventDefault();
+	const data = new FormData(event.currentTarget);
+	const message = {
+		"name": "stop",
+		"data": {
+            "password": data.get("password")
+		}
+	};
+	socket.send(JSON.stringify(message));
+});
+
+function hideShowDynamicItems(state) {
+    const dynamicItems = document.querySelectorAll('div[class~="dynamic"]');
+    dynamicItems.forEach(item => {
+        if (item.classList.contains(state)) {
+            item.style.display = "block";
+        } else {
+            item.style.display = "none";
+        }
+    });
+}
+
