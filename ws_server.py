@@ -30,6 +30,8 @@ async def socket_handler(request):
                 logger.info("Receiving message: " + msg.data.strip())
                 # convert json string to dict and pass along to state machine
                 answer = state.Machine().on_event(json.loads(msg.data.strip()))
+                # on_event() can use send_message() to send messages to all clients,
+                # but if a reply is made to the sending client only, the answer is used
                 if answer:
                     await ws.send_str(answer)
             except KeyError as e:

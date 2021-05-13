@@ -9,10 +9,10 @@ socket.addEventListener('message', function (event) {
         // hide/show dynamic elements
         hideShowDynamicItems(state);
         // remove previous message
-        document.querySelector("pre").textContent = "";
+        document.querySelector("#status-error p").innerHTML = "";
     } else {
         // just display it as a message
-        document.querySelector("pre").textContent = state;
+        document.querySelector("#status-error p").innerHTML = state;
     }
 });
 

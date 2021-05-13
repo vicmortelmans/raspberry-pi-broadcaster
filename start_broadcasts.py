@@ -24,6 +24,7 @@ def async_start(title, description):
             try:
                 rtmp = create_youtube_broadcast.create_broadcast(ini, title, description)
                 rtmp.update({'ini':ini})
+                rtmp.update({'view':configuration.data[ini]['view']})  # for reporting in return event
                 rtmps.append(rtmp)
             except Exception as e:
                 logging.error(f"Youtube negotiations failes for '{ini}', see traceback:")
@@ -33,6 +34,7 @@ def async_start(title, description):
             try:
                 rtmp = create_facebook_broadcast.create_broadcast(ini, title, description)
                 rtmp.update({'ini':ini})
+                rtmp.update({'view':configuration.data[ini]['view']})  # for reporting in return event
                 rtmps.append(rtmp)
             except Exception as e:
                 logging.error(f"Facebook negotiations failes for '{ini}', see traceback:")
@@ -50,7 +52,7 @@ def async_start(title, description):
     logging.info(f"Launching stream: {command}")
     # os.system("daemon --stdout=daemon.info --stderr=daemon.err -- %s" % command)
     # return the new state
-    return {'name': 'started'}
+    return {'name': 'started', 'data': rtmps}
 
 @async_wrap
 def async_stop():

@@ -5,6 +5,17 @@ import ws_server
 import start_broadcasts
 
 
+def inform_clients(state):
+    # Send the state change to the websocket clients
+    logging.info("Scheduling task for sending new state to clients")
+    asyncio.create_task(ws_server.send_message(str(state)))
+
+def message_clients(html):
+    # Send the state change to the websocket clients
+    logging.info("Scheduling task for sending new state to clients")
+    asyncio.create_task(ws_server.send_message(html))
+
+
 class Machine(object):
     """ 
     Raspberry Pi Broadcaster State Machine
@@ -40,13 +51,12 @@ class Machine(object):
             # The next state will be the result of the handle function.
             # If the handle() method raises an exception, the state is NOT changed !!
             self.state = self.state.handle(event)
-            logging.info("Scheduling task for sending new state to clients")
-            asyncio.create_task(ws_server.send_message(str(self.state)))
             logging.info(f"State machine has a new state: '{self.state}'")
         except KeyError as e:
             logging.error(f"Missing data in event: '{event}' ({e})")
         except configuration.PasswordError as e:
             logging.error(f"Wrong password in event: '{event}'")
+            # ws_server will send following message to the sending client only:
             return "Wrong password!"
 
 
@@ -100,6 +110,7 @@ class IdleState(State):
     Examples of events that are accepted:
 
     {"name":"start","data":{"title":"Custom Title","description":"Custom Description"}}
+    {"name":"started","data":[{"id":...,"rtmp":...,"ini":"<name of stream in config.ini>","view":"<link to stream for viewing>"},...]}
     {"name":"button-short"}
     {"name":"reboot"}
     {"name":"button-long"}
@@ -119,10 +130,18 @@ class IdleState(State):
             new_state = StartingState()
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for starting the livestream with data: '{str(data)}'")
+            # Start the broadcasting in a task
             task = asyncio.create_task(start_broadcasts.async_start(data['title'], data['description']))
+            # The task returns an event!
+            # Handle the event in a task
             asyncio.create_task(Machine().await_event(task))
+
+            inform_clients(new_state)
             return new_state
+
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
+
+            inform_clients(new_state)
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -136,10 +155,23 @@ class StartingState(State):
 
     def handle(self, event):
         if event['name'] == 'started':
-            return StreamingState()
+            if not 'data' in event:
+                raise KeyError("no 'data' in event")
+            new_state = StreamingState()
+            logging.info("New state is " + str(new_state))
+
+            inform_clients(new_state)
+            message_clients()
+            return new_state
+
         elif event['name'] == 'failed':
+
+            inform_clients(new_state)
             return IdleState()
+
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
+
+            inform_clients(new_state)
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -158,10 +190,18 @@ class StreamingState(State):
             logging.info(f"Scheduling task for stopping the livestream")
             task = asyncio.create_task(start_broadcasts.async_stop())
             asyncio.create_task(Machine().await_event(task))
+
+            inform_clients(new_state)
             return new_state
+
         elif event['name'] == 'streaming-died':
+
+            inform_clients(new_state)
             return IdleState()
+        
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
+
+            inform_clients(new_state)
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -175,8 +215,13 @@ class StoppingState(State):
 
     def handle(self, event):
         if event['name'] == 'stopped':
+
+            inform_clients(new_state)
             return IdleState()
+
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
+
+            inform_clients(new_state)
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
@@ -190,6 +235,8 @@ class RebootingState(State):
 
     def handle(self, event):
         if event['name'] == 'reboot' or event['name'] == 'button-long':
+
+            inform_clients(new_state)
             return RebootingState()
 
         logging.error(f"Unexpected event, state is not changed")
