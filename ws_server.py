@@ -6,7 +6,8 @@ import jinja2
 import json
 import logging
 import os
-import socket
+
+import default_form_data
 import state
 
 logger = logging.getLogger('websockets')
@@ -52,8 +53,9 @@ async def socket_handler(request):
 
 async def site_handler(request):
     context = {
-        'ip': get_ip()
+        'state': state.Machine().state_string()
     }
+    context.update(default_form_data.defaults)
     response = aiohttp_jinja2.render_template("rpb_console.html", request, context=context)
     return response
 
@@ -67,6 +69,7 @@ async def start_server_async():
     app.add_routes([web.get('/socket.io', socket_handler)])
     app.add_routes([web.get('/site/', site_handler)])
     app.router.add_static('/site/js/', path='js', name='js')
+    app.router.add_static('/site/img/', path='img', name='img')
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, 'localhost', 8080)
@@ -82,10 +85,3 @@ async def send_message(message):
     for ws in connected_websockets:
         await ws.send_str(message)
 
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    ip = s.getsockname()[0]
-    logger.info(f"My IP address is '{ip}'")
-    s.close()
-    return ip

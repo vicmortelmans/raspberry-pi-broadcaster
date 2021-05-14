@@ -11,13 +11,16 @@
       div.video {
           padding: 12px;
       }
-      .video-js {
-          margin: auto;
-      }
       .dynamic {
           display: none;
       }
-      .dynamic.IdleState {
+      .my-video-dimensions, .video-js {
+          margin: auto;
+          width: unset;
+          height: 200px;
+      }
+      /* starting state for dynamic elements */
+      .dynamic.{{ state }} {
           display: block;
       }
     </style>
@@ -26,14 +29,8 @@
     <script src="//vjs.zencdn.net/7.8.2/video.min.js"></script>
   </head>
   <body>
+    <img src="img/icon.png" alt="logo"></img>
     <h1>Heilig Hart Livestream</h1>
-    <div id="status-error">
-      <h2>Statusrapport</h2>
-      <p></p>
-    </div>
-    <div id="streams">
-      <h2>Streams</h2>
-    </div>
     <div class="dynamic StartingState">
         <h2>De stream wordt voorbereid</h2>
         <p>Even geduld!</p>
@@ -53,12 +50,15 @@
     <div id="start-button" class="dynamic IdleState">
       <h2>Geen uitzending</h2>
       <form>
-        <p>Titel:<br/><input type="text" name="title" value="TODO: pre-filled" size=40></p>
-        <!--p>Titel:<br/><input type="text" name="title" value="{{ liturgical_day|e }}" size=40></p-->
+        <p>Titel:<br/><input type="text" name="title" value="{{ liturgical_day|e }}" size=40></p>
         <p>Beschrijving:<br/><textarea name="description" rows=4 cols=40>Live H. Mis vanuit de Heilig-Hartkerk</textarea></p>
         <p>Wachtwoord:<br/><input type="password" name="password"></p>
         <p><input type="submit" value="Start streaming"></p>
       </form>
+    </div>
+    <div id="status-error">
+      <h2>Statusrapport</h2>
+      <p></p>
     </div>
     <div id="video">
       <video id="my-video" class="video-js vjs-default-skin" 

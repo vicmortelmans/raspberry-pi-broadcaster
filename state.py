@@ -1,8 +1,9 @@
-import configuration
-import logging
 import asyncio
-import ws_server
+import configuration
+import jinja2
+import logging
 import start_broadcasts
+import ws_server
 
 
 def inform_clients(state):
@@ -32,6 +33,10 @@ class Machine(object):
     def has_state(self, state_class):
         """ Test current state """
         return isinstance(self.state, state_class)
+
+    def state_string(self):
+        """ Return current state as string """
+        return str(self.state)
 
     def on_event(self, event):
         """
@@ -110,7 +115,6 @@ class IdleState(State):
     Examples of events that are accepted:
 
     {"name":"start","data":{"title":"Custom Title","description":"Custom Description"}}
-    {"name":"started","data":[{"id":...,"rtmp":...,"ini":"<name of stream in config.ini>","view":"<link to stream for viewing>"},...]}
     {"name":"button-short"}
     {"name":"reboot"}
     {"name":"button-long"}
@@ -130,9 +134,9 @@ class IdleState(State):
             new_state = StartingState()
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for starting the livestream with data: '{str(data)}'")
-            # Start the broadcasting in a task
+            # Start the rtmp broadcasting in a task
             task = asyncio.create_task(start_broadcasts.async_start(data['title'], data['description']))
-            # The task returns an event!
+            # The task returns a 'started' event that contains a list of active channels!
             # Handle the event in a task
             asyncio.create_task(Machine().await_event(task))
 
@@ -141,8 +145,10 @@ class IdleState(State):
 
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            new_state = RebootingState()
+
             inform_clients(new_state)
-            return RebootingState()
+            return new_state
 
         logging.error(f"Unexpected event, state is not changed")
         return self
@@ -151,6 +157,12 @@ class IdleState(State):
 class StartingState(State):
     """
     The state which indicates that streaming is attempted to be started.
+
+    Examples of events that are accepted:
+
+    {"name":"started","data":[{"id":...,"rtmp":...,"ini":"<name of stream in config.ini>","view":"<link to stream for viewing>"},...]}
+    {"name":"reboot"}
+    {"name":"button-long"}
     """
 
     def handle(self, event):
@@ -159,20 +171,26 @@ class StartingState(State):
                 raise KeyError("no 'data' in event")
             new_state = StreamingState()
             logging.info("New state is " + str(new_state))
+            template = jinja2.Template('{% for stream in data %}<p><a href="{{ stream.view }}" target="_blank">{{ stream.ini }}</a></p>{% endfor %}')
+            channels = template.render(data=event['data'])
 
             inform_clients(new_state)
-            message_clients()
+            message_clients(channels)
             return new_state
 
         elif event['name'] == 'failed':
 
+            new_state = IdleState()
+
             inform_clients(new_state)
-            return IdleState()
+            return new_state
 
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            new_state = RebootingState()
+
             inform_clients(new_state)
-            return RebootingState()
+            return new_state
 
         logging.error(f"Unexpected event, state is not changed")
         return self
@@ -188,21 +206,30 @@ class StreamingState(State):
             new_state = StoppingState()
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for stopping the livestream")
+            # Execute the killing of the broadcasts in a task
             task = asyncio.create_task(start_broadcasts.async_stop())
+            # The task returns a 'stopped'!
+            # Handle the event in a task
             asyncio.create_task(Machine().await_event(task))
 
             inform_clients(new_state)
+            message_clients("De uitzending is beëindigd.")
             return new_state
 
         elif event['name'] == 'streaming-died':
 
+            new_state = IdleState()
+
             inform_clients(new_state)
-            return IdleState()
+            message_clients("De uitzending is afgebroken!")
+            return new_state
         
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            new_state = RebootingState()
+
             inform_clients(new_state)
-            return RebootingState()
+            return new_state
 
         logging.error(f"Unexpected event, state is not changed")
         return self
@@ -216,13 +243,17 @@ class StoppingState(State):
     def handle(self, event):
         if event['name'] == 'stopped':
 
+            new_state = IdleState()
+
             inform_clients(new_state)
-            return IdleState()
+            return new_state
 
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            new_state = RebootingState()
+
             inform_clients(new_state)
-            return RebootingState()
+            return new_state
 
         logging.error(f"Unexpected event, state is not changed")
         return self
@@ -236,8 +267,10 @@ class RebootingState(State):
     def handle(self, event):
         if event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            new_state = RebootingState()
+
             inform_clients(new_state)
-            return RebootingState()
+            return new_state
 
         logging.error(f"Unexpected event, state is not changed")
         return self
