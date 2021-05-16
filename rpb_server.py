@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 import asyncio
 import logging
+
+import button_monitor
+import led_driver
+import ps_monitor
 import state
 import ws_server
-import ps_monitor
 
 
 async def start_services():
@@ -18,10 +21,17 @@ async def start_services():
 
     logging.info('Startup ps monitor')
     ps_monitor_task = ps_monitor.start_ps_monitor_async()
-    # ps_monitor_task = asyncio.create_task(ps_monitor.start_ps_monitor())
     logging.info('Startup ps monitor [ok]')
 
-    await asyncio.gather(ws_server_task, ps_monitor_task)
+    logging.info('Startup led driver')
+    led_driver_task = led_driver.start_led_driver_async()
+    logging.info('Startup led driver [ok]')
+
+    logging.info('Startup button monitor')
+    button_monitor_task = button_monitor.start_button_monitor_async()
+    logging.info('Startup button monitor [ok]')
+
+    await asyncio.gather(ws_server_task, ps_monitor_task, led_driver_task, button_monitor_task)
 
     logging.info('Exit')
 
