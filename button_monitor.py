@@ -1,21 +1,26 @@
 import asyncio
 import logging
 import RPi.GPIO as GPIO
+import time
 
 import state
 
-POLLING_FREQUENCY = 0.01  # frequency = 1/0.01 s (approx.)
+POLLING_FREQUENCY = 0.1  # frequency = 10/s (approx.)
 
+
+"""
+The BUTTON is wired on GPIO21 (pin 40)
+""" 
 
 BUTTON = 21
-GPIO.cleanup()
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
 
 async def start_button_monitor_async():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(BUTTON, GPIO.FALLING, bouncetime=100)
     logging.info("Starting button monitor as an infinite loop")
-    import RPi.GPIO
-    GPIO.add_event_detect(BUTTON, GPIO.FALLING, bouncetime=50)
+    sm = state.Machine()
     down = 0  # last time the button was pressed down
     last = 0  # last time the button was released (s since whathever)
     last2 = 0  # 2nd last time ...
@@ -25,7 +30,7 @@ async def start_button_monitor_async():
         else:
             logging.info("Button is pressed")
             down = time.time()
-            while GPIO.input(21) == GPIO.LOW:
+            while GPIO.input(BUTTON) == GPIO.LOW:
                 await asyncio.sleep(POLLING_FREQUENCY)
             else:
                 logging.info("Button is released")

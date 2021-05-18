@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import asyncio
+import RPi.GPIO as GPIO
 import logging
 
 import button_monitor
@@ -36,15 +37,26 @@ async def start_services():
     logging.info('Exit')
 
 if __name__ == "__main__":
-    # start the service by runing "./rpb_server.py"  
+    try:
 
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d %(funcName)s] %(message)s',
-        datefmt='%Y-%m-%d:%H:%M:%S',
-        level=logging.DEBUG)
+        # start the service by runing "./rpb_server.py"  
 
-    logging.info('Entry')
+        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d %(funcName)s] %(message)s',
+            datefmt='%Y-%m-%d:%H:%M:%S',
+            level=logging.DEBUG)
 
-    loop = asyncio.run(start_services())
+        logging.info('Entry')
 
-    logging.info('Exit')
+        loop = asyncio.run(start_services())
 
+        logging.info('Exit')
+
+    #execute this code if CTRL + C is used to kill python script
+    except KeyboardInterrupt:
+
+        print("Bye!")
+
+    #execute code inside this block as the program exits
+    finally:
+
+        GPIO.cleanup()
