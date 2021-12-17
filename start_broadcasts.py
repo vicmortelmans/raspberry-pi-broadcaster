@@ -4,6 +4,7 @@ import create_facebook_broadcast
 from async_wrap import async_wrap
 import configuration
 import logging
+import os
 import ps_monitor
 import state
 import subprocess
@@ -50,7 +51,7 @@ def async_start(title, description):
         if 'rtmp' in rtmp:
             command += f" -c copy -f flv '{rtmp['rtmp']}'"
     logging.info(f"Launching stream: {command}")
-    # os.system("daemon --stdout=daemon.info --stderr=daemon.err -- %s" % command)
+    os.system("daemon --stdout=daemon.info --stderr=daemon.err -- %s" % command)
     # return the new state
     return {'name': 'started', 'data': rtmps}
 

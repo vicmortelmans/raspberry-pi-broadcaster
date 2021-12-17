@@ -7,15 +7,15 @@ import state
 
 
 """
-The SIGNALS are defined by a frequency, duration tuple, in seconds.
+The SIGNALS are defined by a phase, time-on tuple, in seconds.
 The driver loop polls the state machine and runs at fairly high frequency, 
-to support the 0.1s led frequency, and to be responsive to state changes.
+to support the 0.1s led phase, and to be responsive to state changes.
 """
 
 SIGNALS = {
-    "IdleState": (4.0, 0.1),
-    "StartingState": (0.2, 0.1),
-    "StreamingState": (1.0, 1.0),
+    "IdleState": (4.0, 0.1),  # on for 0.1 s every 4 s
+    "StartingState": (0.2, 0.1),  # on for 0.1 s every 0.2 s
+    "StreamingState": (4.0, 3.9),  # on for 3.9 s every 4 s
     "StoppingState": (0.2, 0.1),
     "RebootingState": (0.2, 0.1)
 }

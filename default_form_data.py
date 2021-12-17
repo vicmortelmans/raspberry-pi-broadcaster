@@ -3,7 +3,7 @@ import json
 import requests
 import socket
 
-# This file exposes a dict 'defaults' that is picked when rendering the rpb_console 
+# This script exposes a dict 'defaults' that is picked up when rendering the rpb_console 
 
 def get_liturgical_day():
     date = datetime.datetime.today().strftime('%Y-%m-%d')
@@ -25,7 +25,7 @@ def get_ip():
 
 
 defaults = {
-    'liturgical_day': get_liturgical_day(),
+    'title': get_liturgical_day(),
     'ip': get_ip()
 }
 

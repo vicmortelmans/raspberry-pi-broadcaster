@@ -11,7 +11,7 @@ import default_form_data
 import state
 
 logger = logging.getLogger('websockets')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 connected_websockets = set()
@@ -20,6 +20,7 @@ async def socket_handler(request):
     logger.info("New client connected")
 
     ws = web.WebSocketResponse()
+    #ws = web.WebSocketResponse(heartbeat=5.0)
     await ws.prepare(request)
 
     # Register
@@ -28,13 +29,19 @@ async def socket_handler(request):
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             try:
-                logger.info("Receiving message: " + msg.data.strip())
-                # convert json string to dict and pass along to state machine
-                answer = state.Machine().on_event(json.loads(msg.data.strip()))
+                message = msg.data.strip()
+                logger.info("Receiving message: " + message)
+                if message == '__ping__':
+                    # answer ping
+                    answer = message
+                else:
+                    # convert json string to dict and pass along to state machine
+                    answer = state.Machine().on_event(json.loads(message))
                 # on_event() can use send_message() to send messages to all clients,
                 # but if a reply is made to the sending client only, the answer is used
                 if answer:
                     await ws.send_str(answer)
+                    logger.info("Answered message: " + answer)
             except KeyError as e:
                 logger.error("Message parsing error: ", exc_info=e)
                 # Ignoring message
@@ -43,7 +50,16 @@ async def socket_handler(request):
                 # Ignoring message
 
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' % ws.exception())
+            logger.error('Socket connection closed with exception %s' % ws.exception())
+            break
+
+        elif msg.type == aiohttp.WSMsgType.CLOSED:
+            logger.info('Socket connection closed')
+            break
+
+        else:
+            logger.error("Unknown websocket message type")
+            break
 
     # Unregister
     logger.info("Client has disconnected")
@@ -83,5 +99,9 @@ async def send_message(message):
     logger.info(f"Going to send message '{message}' to all connected clients")
 
     for ws in connected_websockets:
-        await ws.send_str(message)
+        logger.info(f"Sending message...")
+        try:
+            await ws.send_str(message)
+        except ConnectionResetError as e:
+            logger.error(f"Socket closed: '{e}'")
 

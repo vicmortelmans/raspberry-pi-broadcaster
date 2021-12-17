@@ -30,15 +30,19 @@ async def start_button_monitor_async():
         else:
             logging.info("Button is pressed")
             down = time.time()
+            handled = False
             while GPIO.input(BUTTON) == GPIO.LOW:
+                if time.time() - down > 5.0 and not handled:
+                    # button pressed for more than 5 seconds
+                    # launch the event for starting/stopping
+                    sm.on_event({'name': 'button-short'})
+                    handled = True
                 await asyncio.sleep(POLLING_FREQUENCY)
             else:
                 logging.info("Button is released")
                 up = time.time()
-                if up - down > 5.0:
-                    # launch the event for starting/stopping
-                    sm.on_event({'name': 'button-short'})
-                elif up - last2 < 3.0:
+                if up - last2 < 3.0:
+                    # button pressed three times in less than 3 seconds
                     # launch the event for rebooting
                     sm.on_event({'name': 'button-long'})
                 else:

@@ -121,21 +121,37 @@ class IdleState(State):
     """
 
     def handle(self, event):
-        if event['name'] == 'start' or event['name'] == 'button-short':
+        if event['name'] == 'start':
             if not 'data' in event:
                 raise KeyError("no 'data' in event")
             data = {
                     'title': '',
                     'description': '',
                     'password': ''
-                    }
-            data.update(event['data'])  # fallback values
+                    }  # fallback values from config.ini file 
+                       # are filled in by create_*_broadcast.py
+            data.update(event['data'])
             configuration.check_password(data['password'])  # throw error if password is wrong
             new_state = StartingState()
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for starting the livestream with data: '{str(data)}'")
             # Start the rtmp broadcasting in a task
             task = asyncio.create_task(start_broadcasts.async_start(data['title'], data['description']))
+            # The task returns a 'started' event that contains a list of active channels!
+            # Handle the event in a task
+            asyncio.create_task(Machine().await_event(task))
+
+            inform_clients(new_state)
+            return new_state
+
+        if event['name'] == 'button-short':
+            new_state = StartingState()
+            logging.info("New state is " + str(new_state))
+            logging.info(f"Scheduling task for starting the livestream using the button")
+            # Start the rtmp broadcasting in a task
+            task = asyncio.create_task(start_broadcasts.async_start('', ''))
+            # Fallback values for title and description from config.ini file 
+            # are filled in by create_*_broadcast.py
             # The task returns a 'started' event that contains a list of active channels!
             # Handle the event in a task
             asyncio.create_task(Machine().await_event(task))
@@ -203,6 +219,27 @@ class StreamingState(State):
 
     def handle(self, event):
         if event['name'] == 'stop':
+            if not 'data' in event:
+                raise KeyError("no 'data' in event")
+            data = {
+                    'password': ''
+                    }  # fallback values 
+            data.update(event['data'])
+            configuration.check_password(data['password'])  # throw error if password is wrong
+            new_state = StoppingState()
+            logging.info("New state is " + str(new_state))
+            logging.info(f"Scheduling task for stopping the livestream")
+            # Execute the killing of the broadcasts in a task
+            task = asyncio.create_task(start_broadcasts.async_stop())
+            # The task returns a 'stopped'!
+            # Handle the event in a task
+            asyncio.create_task(Machine().await_event(task))
+
+            inform_clients(new_state)
+            message_clients("De uitzending is beëindigd.")
+            return new_state
+
+        elif event['name'] == 'button-short':
             new_state = StoppingState()
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for stopping the livestream")
