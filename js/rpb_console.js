@@ -2,6 +2,7 @@ var HEARTBEAT_INTERVAL = 10000;
 var HEARTBEAT_TIMEOUT = 10000;
 var RECONNECT_INTERVAL = 1000;
 var PING_MESSAGE = '__ping__';
+var activeState = null;
 
 
 // Initiate websocket connection
@@ -53,10 +54,13 @@ function WebSocketKeepAlive(address) {
 				console.log('Websocket pong');
 				heartbeatStart(); // message will keep alive, restart heartbeat
 			} else if (["IdleState","StartingState","StreamingState","StoppingState","RebootingState"].includes(state)) {
-				// hide/show dynamic elements
-				hideShowDynamicItems(state);
-				// remove previous message
-				document.querySelector("#status-error p").innerHTML = "";
+				if (state != activeState) {
+					activeState = state;
+					// hide/show dynamic elements
+					hideShowDynamicItems(state);
+					// clear previous message
+					document.querySelector("#status-error p").innerHTML = "";
+				}
 			} else {
 				// just display it as a message
 				document.querySelector("#status-error p").innerHTML = state;

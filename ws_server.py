@@ -26,6 +26,10 @@ async def socket_handler(request):
     # Register
     connected_websockets.add(ws)
 
+    # Send initial state (for page load, there's also site_handler passing this info, but
+    # this is meant to cover for client reconnects)
+    await ws.send_str(state.Machine().state_string())
+
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             try:
