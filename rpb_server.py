@@ -4,6 +4,7 @@ import RPi.GPIO as GPIO
 import logging
 
 import button_monitor
+import camera
 import led_driver
 import ps_monitor
 import state
@@ -15,6 +16,10 @@ async def start_services():
     
     logging.info('Startup state machine')
     state.Machine()
+
+    logging.info('Startup camera stream')
+    camera_task = camera.start_stream_async()
+    logging.info('Startup camera stream [ok]')
 
     logging.info('Startup websocket server')
     ws_server_task = ws_server.start_server_async()
@@ -32,16 +37,17 @@ async def start_services():
     button_monitor_task = button_monitor.start_button_monitor_async()
     logging.info('Startup button monitor [ok]')
 
-    await asyncio.gather(ws_server_task, ps_monitor_task, led_driver_task, button_monitor_task)
+    await asyncio.gather(camera_task, ws_server_task, ps_monitor_task, led_driver_task, button_monitor_task)
 
     logging.info('Exit')
 
 if __name__ == "__main__":
+
     try:
 
         # start the service by runing "./rpb_server.py"  
 
-        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d %(funcName)s] %(message)s',
+        logging.basicConfig(format='[RPB] %(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d %(funcName)s] %(message)s',
             datefmt='%Y-%m-%d:%H:%M:%S',
             level=logging.DEBUG)
 

@@ -2,19 +2,38 @@ import asyncio
 import configuration
 import jinja2
 import logging
+import os
 import start_broadcasts
 import ws_server
 
+def require_data(event, defaults={}):
+    # Raise an error if there's no data
+    if not 'data' in event:
+        raise KeyError("no 'data' in event")
+    if defaults:
+        data = defaults
+        data.update(event['data'])
+    else:
+        data = event['data']
+    return data
+
+def require_password(data):
+    # Raise an error if the password is not correct
+    configuration.check_password(data['password'])  # throw error if password is wrong
+    return
 
 def inform_clients(state):
     # Send the state change to the websocket clients
     logging.info("Scheduling task for sending new state to clients")
     asyncio.create_task(ws_server.send_message(str(state)))
+    return
 
 def message_clients(html):
-    # Send the state change to the websocket clients
-    logging.info("Scheduling task for sending new state to clients")
+    # Send a message to the websocket clients
+    logging.info("Scheduling task for sending a message to clients")
     asyncio.create_task(ws_server.send_message(html))
+    return
+
 
 
 class Machine(object):
@@ -114,25 +133,20 @@ class IdleState(State):
 
     Examples of events that are accepted:
 
-    {"name":"start","data":{"title":"Custom Title","description":"Custom Description"}}
+    {"name":"start","data":{"password":"xxx","title":"Custom Title","description":"Custom Description"}}
     {"name":"button-short"}
-    {"name":"reboot"}
+    {"name":"reboot","data":{"password":"xxx"}}
     {"name":"button-long"}
     """
 
     def handle(self, event):
         if event['name'] == 'start':
-            if not 'data' in event:
-                raise KeyError("no 'data' in event")
-            data = {
-                    'title': '',
-                    'description': '',
-                    'password': ''
-                    }  # fallback values from config.ini file 
-                       # are filled in by create_*_broadcast.py
-            data.update(event['data'])
-            configuration.check_password(data['password'])  # throw error if password is wrong
+            data = require_data(event, defaults={'title': '', 'description': '', 'password': ''})
+            # fallback values from config.ini file are filled in by create_*_broadcast.py
+            require_password(data)
+
             new_state = StartingState()
+
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for starting the livestream with data: '{str(data)}'")
             # Start the rtmp broadcasting in a task
@@ -145,7 +159,9 @@ class IdleState(State):
             return new_state
 
         if event['name'] == 'button-short':
+
             new_state = StartingState()
+
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for starting the livestream using the button")
             # Start the rtmp broadcasting in a task
@@ -160,8 +176,14 @@ class IdleState(State):
             return new_state
 
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
+        
+            if event['name'] == 'reboot':
+                data = require_data(event, defaults={ 'password': '' })
+                require_password(data)
 
             new_state = RebootingState()
+
+            os.system('./halt.sh')
 
             inform_clients(new_state)
             return new_state
@@ -183,12 +205,12 @@ class StartingState(State):
 
     def handle(self, event):
         if event['name'] == 'started':
-            if not 'data' in event:
-                raise KeyError("no 'data' in event")
+            data = require_data(event)
+
             new_state = StreamingState()
             logging.info("New state is " + str(new_state))
             template = jinja2.Template('{% for stream in data %}<p><a href="{{ stream.view }}" target="_blank">{{ stream.ini }}</a></p>{% endfor %}')
-            channels = template.render(data=event['data'])
+            channels = template.render(data=data)
 
             inform_clients(new_state)
             message_clients(channels)
@@ -203,7 +225,13 @@ class StartingState(State):
 
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            if event['name'] == 'reboot':
+                data = require_data(event, defaults={ 'password': '' })
+                require_password(data)
+
             new_state = RebootingState()
+
+            os.system('./halt.sh')
 
             inform_clients(new_state)
             return new_state
@@ -219,14 +247,11 @@ class StreamingState(State):
 
     def handle(self, event):
         if event['name'] == 'stop':
-            if not 'data' in event:
-                raise KeyError("no 'data' in event")
-            data = {
-                    'password': ''
-                    }  # fallback values 
-            data.update(event['data'])
-            configuration.check_password(data['password'])  # throw error if password is wrong
+            data = require_data(event, defaults={ 'password': '' })
+            require_password(data)
+
             new_state = StoppingState()
+
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for stopping the livestream")
             # Execute the killing of the broadcasts in a task
@@ -240,7 +265,9 @@ class StreamingState(State):
             return new_state
 
         elif event['name'] == 'button-short':
+
             new_state = StoppingState()
+
             logging.info("New state is " + str(new_state))
             logging.info(f"Scheduling task for stopping the livestream")
             # Execute the killing of the broadcasts in a task
@@ -263,7 +290,13 @@ class StreamingState(State):
         
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            if event['name'] == 'reboot':
+                data = require_data(event, defaults={ 'password': '' })
+                require_password(data)
+
             new_state = RebootingState()
+
+            os.system('./halt.sh')
 
             inform_clients(new_state)
             return new_state
@@ -287,7 +320,13 @@ class StoppingState(State):
 
         elif event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            if event['name'] == 'reboot':
+                data = require_data(event, defaults={ 'password': '' })
+                require_password(data)
+
             new_state = RebootingState()
+
+            os.system('./halt.sh')
 
             inform_clients(new_state)
             return new_state
@@ -304,7 +343,13 @@ class RebootingState(State):
     def handle(self, event):
         if event['name'] == 'reboot' or event['name'] == 'button-long':
 
+            if event['name'] == 'reboot':
+                data = require_data(event, defaults={ 'password': '' })
+                require_password(data)
+
             new_state = RebootingState()
+
+            os.system('./halt.sh')
 
             inform_clients(new_state)
             return new_state

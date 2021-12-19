@@ -161,6 +161,21 @@ stop_form.addEventListener('submit', event => {
 	wska.getWebSocket().send(text);
 });
 
+const reboot_form = document.querySelector('#reboot-button form');
+reboot_form.addEventListener('submit', event => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const message = {
+        "name": "reboot",
+        "data": {
+            "password": data.get("password")
+        }
+    };
+    text = JSON.stringify(message);
+    console.log('Message to server ', text);
+	wska.getWebSocket().send(text);
+});
+
 function hideShowDynamicItems(state) {
     const dynamicItems = document.querySelectorAll('div[class~="dynamic"]');
     dynamicItems.forEach(item => {

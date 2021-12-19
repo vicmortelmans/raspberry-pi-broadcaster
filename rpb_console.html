@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Heilig Hart Livestream</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <!--link rel="stylesheet" href="/style.css" type="text/css" media="screen"-->
-    <style>
-      body {
-          text-align: center;
-      }
+    <head>
+        <title>Heilig Hart Livestream</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <!--link rel="stylesheet" href="/style.css" type="text/css" media="screen"-->
+        <style>
+body {
+    text-align: center;
+}
       div.video {
           padding: 12px;
       }
@@ -23,59 +23,57 @@
       .dynamic.{{ state }} {
           display: block;
       }
-    </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="//vjs.zencdn.net/7.8.2/video-js.min.css" rel="stylesheet">
-    <script src="//vjs.zencdn.net/7.8.2/video.min.js"></script>
-  </head>
-  <body>
-    <img src="img/icon.png" alt="logo"></img>
-    <h1>Heilig Hart Livestream</h1>
-    <div class="dynamic StartingState">
-        <h2>De stream wordt voorbereid</h2>
-        <p>Even geduld!</p>
-    </div>
-    <div class="dynamic StoppingState">
-        <h2>De stream wordt gestopt</h2>
-        <p>Even geduld!</p>
-    </div>
-    <div id="stop-button" class="dynamic StreamingState">
-      <h2 style="color: red'">IN UITZENDING !</h2>
-      <form action="/cgi-bin/stream_auto.cgi" method="post">
-        <input type="hidden" name="action" value="stop">
-        <p>Wachtwoord:<br/><input type="password" name="password"></p>
-        <input type="submit" value="Stop streaming">
-      </form>
-    </div>
-    <div id="start-button" class="dynamic IdleState">
-      <h2>Geen uitzending</h2>
-      <form>
-        <p>Titel:<br/><input type="text" name="title" value="{{ title|e }}" size=40></p>
-        <p>Beschrijving:<br/><textarea name="description" rows=4 cols=40>Live H. Mis vanuit de Heilig-Hartkerk</textarea></p>
-        <p>Wachtwoord:<br/><input type="password" name="password"></p>
-        <p><input type="submit" value="Start streaming"></p>
-      </form>
-    </div>
-    <div id="status-error">
-      <h2>Statusrapport</h2>
-      <p></p>
-    </div>
-    <div id="video">
-      <video id="my-video" class="video-js vjs-default-skin" 
-                           autoplay controls preload="auto" vjs-big-play-centered 
-                                             data-setup='{}'>
-        <source src="/webcam/hhart.m3u8" type="application/x-mpegURL"/>
-      </video>
-    </div>
-    <div id="reboot-button">
-      <form action="/cgi-bin/stream_auto.cgi" method="post">
-        <input type="hidden" name="action" value="stop">
-        <p>Wachtwoord:<br/><input type="password" name="password"></p>
-        <input type="submit" value="Reboot">
-      </form>
-    </div>
-    <footer>IP-adres op lokaal netwerk: {{ ip }}</footer>
-    <script src="js/rpb_console.js"></script>
-  </body>
+        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="//vjs.zencdn.net/7.17.0/video-js.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <img src="img/icon.png" alt="logo"></img>
+        <h1>Heilig Hart Livestream</h1>
+        <div class="dynamic StartingState">
+            <h2>De stream wordt voorbereid</h2>
+            <p>Even geduld!</p>
+        </div>
+        <div class="dynamic StoppingState">
+            <h2>De stream wordt gestopt</h2>
+            <p>Even geduld!</p>
+        </div>
+        <div id="stop-button" class="dynamic StreamingState">
+            <h2 style="color: red;">IN UITZENDING !</h2>
+            <form>
+                <p>Wachtwoord:<br/><input type="password" name="password"></p>
+                <p><input type="submit" value="Stop streaming"></p>
+            </form>
+        </div>
+        <div id="start-button" class="dynamic IdleState">
+            <h2>Geen uitzending</h2>
+            <form>
+                <p>Titel:<br/><input type="text" name="title" value="{{ title|e }}" size=40></p>
+                <p>Beschrijving:<br/><textarea name="description" rows=4 cols=40>Live H. Mis vanuit de Heilig-Hartkerk</textarea></p>
+                <p>Wachtwoord:<br/><input type="password" name="password"></p>
+                <p><input type="submit" value="Start streaming"></p>
+            </form>
+        </div>
+        <div id="status-error">
+            <h2>Statusrapport</h2>
+            <p></p>
+        </div>
+        <div id="video">
+            <video id="my-video" class="video-js vjs-default-skin" 
+                                 autoplay controls preload="auto" vjs-big-play-centered 
+                                                   data-setup='{}'>
+                <source src="/webcam/hhart.m3u8" type="application/x-mpegURL"/>
+            </video>
+        </div>
+        <div id="reboot-button">
+            <form>
+                <p>Wachtwoord:<br/><input type="password" name="password"></p>
+                <p><input type="submit" value="Reboot"></p>
+            </form>
+        </div>
+        <footer>IP-adres op lokaal netwerk: {{ ip }}</footer>
+        <script src="js/rpb_console.js"></script>
+        <script src="//vjs.zencdn.net/7.17.0/video.min.js"></script>
+    </body>
 </html>
 
