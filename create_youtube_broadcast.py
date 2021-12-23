@@ -14,17 +14,15 @@ import requests
 import configuration
 from slugify import slugify
 
-# The CLIENT_SECRETS_FILE variable specifies the name of a file that contains
+# The client secrets file contains
 # the OAuth 2.0 information for this application, including its client_id and
 # client_secret. You can acquire an OAuth 2.0 client ID and client secret from
-# the {{ Google Cloud Console }} at
-# {{ https://cloud.google.com/console }}.
+# the Google Cloud Console at https://cloud.google.com/console.
 # Please ensure that you have enabled the YouTube Data API for your project.
 # For more information about using OAuth2 to access the YouTube Data API, see:
 #   https://developers.google.com/youtube/v3/guides/authentication
 # For more information about the client_secrets.json file format, see:
 #   https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
-CLIENT_SECRETS_FILE = "client_secrets.json"
 
 # This OAuth 2.0 access scope allows for full read/write access to the
 # authenticated user's account.
@@ -142,9 +140,9 @@ def create_broadcast(name, title, description):
   # are taken from config.ini
 
   if not title:
-      title = configuration.data['main']['title']
+      title = configuration.data['DEFAULT']['title']
   if not description:
-      description = configuration.data['main']['description']
+      description = configuration.data['DEFAULT']['description']
   t = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
   t2 = (datetime.datetime.utcnow() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -166,6 +164,6 @@ def create_broadcast(name, title, description):
 if __name__ == "__main__":
     # very crude standalone implementation, expecting as first argument the
     # name as in the section header in the config.ini file, for testing only
-    # example: python3 create_broadcast.py "<name as in config.ini header>"
+    # example: python3 create_youtube_broadcast.py "<name as in config.ini header>"
     return_dict = create_broadcast(sys.argv[1], '', '')
     print(json.dumps(return_dict, indent=4))

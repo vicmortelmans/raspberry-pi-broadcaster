@@ -13,6 +13,8 @@ The launch script rpb_server_launch.sh redirects output to syslog, which can be 
 
 - `config.ini` sets the RPB name, website password, camera parameters and destinations. For Youtube destinations, a client secrets file is needed and for Facebook destinations, a long lived token file.
 
+- Youtube requires a token file for each destination. To create this, run `python3 create_youtube_broadcast.py <destination>` where <destination> is the header name of the target in `config.ini`. You'll get an URL to go to for authentication and if that is successful, a new file `youtube-<destination>.json` is available in this directory. If you have multiple youtube accounts or brand accounts, make sure to select the correct one during authentication, otherwise a token will be created, but the streaming will still fail. There may be an expiry date on this token, at which point these steps can be repeated.
+
 To start the RPB, run `./rpb_server.py` or `python3 rpb_server.py`.
 
 ## Multiple controllers are included:
