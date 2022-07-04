@@ -8,6 +8,8 @@ Raspberry Pi Broadcaster (RPB) is launched by Nginx, but therefor the Nginx conf
 
 The launch script rpb_server_launch.sh redirects output to syslog, which can be inspected by `journalctl -f | grep RPB`.
 
+Starting and stopping the service (nginx + rpb_server): `sudo systemctl {start,stop} nginx.service`
+
 
 ## Configuration:
 

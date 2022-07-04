@@ -28,8 +28,8 @@ def async_start(title, description):
                 rtmp.update({'view':configuration.data[ini]['view']})  # for reporting in return event
                 rtmps.append(rtmp)
             except Exception as e:
-                logging.error(f"Youtube negotiations failes for '{ini}', see traceback:")
-                logging.error(traceback.format_exc())
+                logging.error(f"Youtube negotiations failes for '{ini}', see traceback:", exc_info=True)
+                #logging.error(traceback.format_exc())
         elif configuration.data[ini]['type'] == 'facebook':
             logging.info(f"Negotiating with facebook for '{ini}'")
             try:
@@ -38,8 +38,8 @@ def async_start(title, description):
                 rtmp.update({'view':configuration.data[ini]['view']})  # for reporting in return event
                 rtmps.append(rtmp)
             except Exception as e:
-                logging.error(f"Facebook negotiations failes for '{ini}', see traceback:")
-                logging.error(traceback.format_exc())
+                logging.error(f"Facebook negotiations failes for '{ini}', see traceback:", exc_info=True)
+                #logging.error(traceback.format_exc())
     logging.info(f"Result of negotiations is {len(rtmps)} targets:")
     logging.info(str(rtmps))
     try:
