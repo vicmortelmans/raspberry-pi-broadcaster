@@ -8,7 +8,7 @@ app_secret = input("App secret: ")
 
 # build the URL for the API endpoint
 host = "https://graph.facebook.com"
-version = "/v9.0"
+version = "/v19.0"
 path = "/oauth/access_token"
 params = urllib.parse.urlencode({
     "grant_type": "fb_exchange_token",

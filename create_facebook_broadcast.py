@@ -46,7 +46,7 @@ def create_broadcast(ini, title, description):
 
     # build the URL for the API endpoint
     host = "https://graph.facebook.com"
-    version = "/v9.0"
+    version = "/v19.0"
     path = "/me/live_videos"
     params = {
         "status": "LIVE_NOW",
